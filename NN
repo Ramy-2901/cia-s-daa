@@ -1,0 +1,46 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+from pyswarm import pso
+
+data = pd.read_csv(r'C:\Users\ramya\OneDrive\Documents\ml\bank_personal_loan_modelling.csv')
+
+data
+
+data.info()
+
+data.describe()
+
+missing_values = pd.DataFrame({"Percentage ":data.isna().sum() / len(data) * 100})
+missing_values.style.background_gradient(cmap='coolwarm')
+
+data = data.drop(columns=['ID', 'ZIP Code'])
+X = data.drop(columns=['Personal Loan'])
+y = data['Personal Loan']
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=50)
+
+model = MLPClassifier(hidden_layer_sizes=(20, 10), max_iter=1000, activation='relu', solver='adam', random_state=50)
+model.fit(X_train, y_train)
+
+def nn_accuracy(hyperparams):
+    hidden_layer_sizes = tuple(int(i) for i in hyperparams[:2])
+    max_iter = int(hyperparams[2])
+    alpha = hyperparams[3]
+    activation = 'relu' if hyperparams[4] < 0.5 else 'tanh'
+    solver = 'adam' if hyperparams[5] < 0.5 else 'lbfgs'
+    model = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, max_iter=max_iter, alpha=alpha, activation=activation, solver=solver, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    return -accuracy
+
+y_pred=model.predict(X_test)
+accuracy=accuracy_test(y_test,y_pred)
+conf_matrix=confusion_matrix(y_test, y_pred)
+print(f"Accuracy: {accuracy}")
+
