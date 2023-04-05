@@ -1,0 +1,78 @@
+import pandas as pd
+import numpy as np
+import torch
+from sklearn.model_selection import train_test_split
+
+from torch import nn, optim
+from torch.utils.data import Dataset, DataLoader
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+from pyswarm import pso
+
+df = pd.read_csv(r'C:\Users\ramya\OneDrive\Documents\ml\bank_personal_loan_modelling.csv')
+
+df
+
+df.info()
+
+df.isna().any
+
+missing_values = pd.DataFrame({"Percentage ":df.isna().sum() / len(df) * 100})
+missing_values.style.background_gradient(cmap='coolwarm')
+
+df['ID']
+
+df['ZIP Code']
+
+df = df.drop(['ID', 'ZIP Code'], axis=1)
+df = pd.get_dummies(df, columns=['Education', 'Family', 'Personal Loan', 'Securities Account', 'CD Account', 'Online', 'CreditCard'])
+X = df.drop(['Personal Loan'], axis=1).values
+y = df['Personal Loan'].values
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=50)
+
+class model(nn.Module):
+    def __init__(self):
+        super(model, self).__init__()
+        self.fc1 = nn.Linear(10, 20)
+        self.fc2 = nn.Linear(30, 40)
+        self.fc3 = nn.Linear(50, 60)
+        self.sigmoid = nn.Sigmoid()
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.sigmoid(x)
+        x = self.fc2(x)
+        x = self.sigmoid(x)
+        return x
+
+class ddd(Dataset):
+    def __init__(self, X, y):
+        self.X = torch.from_numpy(X).float()
+        self.y = torch.from_numpy(y).float()
+    def __len__(self):
+        return len(self.X)
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+
+def train_model(model, dataloader, criterion, optimizer):
+    model.train()
+    running_loss = 0.0
+    for inputs, labels in dataloader:
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels.unsqueeze(1))
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item() * inputs.size(0)
+    return running_loss / len(dataloader.dataset)
+
+def evaluate_model(model, dataloader, criterion):
+    model.eval()
+    running_loss = 0.0
+    correct_predictions = 0
+
