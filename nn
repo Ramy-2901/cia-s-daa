@@ -1,0 +1,63 @@
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+
+df = pd.read_csv(r'C:\Users\ramya\OneDrive\Documents\ml\bank_personal_loan_modelling.csv')
+
+df
+
+missing_values = pd.DataFrame({"Percentage ":df.isna().sum() / len(df) * 100})
+missing_values.style.background_gradient(cmap='coolwarm')
+
+X = df[['Age', 'Income']].values
+
+y = df['Personal Loan'].values
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=50)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+class LoanModel(nn.Module):
+    def __init__(self):
+        super(LoanModel, self).__init__()
+        self.fc1 = nn.Linear(10,20)
+        self.fc2 = nn.Linear(30,40)
+        self.fc3 = nn.Linear(50,60)
+        self.activation = nn.Sigmoid()
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.activation(x)
+        x = self.fc2(x)
+        return x
+
+model = LoanModel()
+criterion = nn.BCELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+num_epochs = 100
+batch_size = 32
+
+for epoch in range(num_epochs):
+    for i in range(0, len(X_train), batch_size):
+        inputs = torch.from_numpy(X_train[i:i+batch_size]).float()
+        labels = torch.from_numpy(y_train[i:i+batch_size]).float()
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels.unsqueeze(1))
+        loss.backward()
+        optimizer.step()
+    with torch.no_grad():
+        test_inputs = torch.from_numpy(X_test).float()
+        test_labels = torch.from_numpy(y_test).float()
+        test_outputs = model(test_inputs)
+        test_loss = criterion(test_outputs, test_labels.unsqueeze(1))
+        test_acc = accuracy_score(test_labels, (test_outputs > 0.5).float())
+    print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item():.4f}, Test Loss: 
+    {test_loss.item():.f}, Test Accuracy: {test_acc:.f}')
+
